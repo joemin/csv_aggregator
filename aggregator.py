@@ -1,4 +1,6 @@
-import argparse, csv, json, os, queue
+#!/usr/bin/env python3
+
+import argparse, csv, math, json, os, queue
 from contextlib import ExitStack
 
 def get_name_map(name_map_file_path, name_start_line):
@@ -15,9 +17,12 @@ def get_name_map(name_map_file_path, name_start_line):
                 name_map[row[0]] = row[1]
     return name_map
 
+def log(str_val):
+    return str(math.log(float(str_val), 2))
+
 def main():
     parser = argparse.ArgumentParser(description='Aggregate Agilent data from multiple CSV files.')
-    parser.add_argument('config_file_path', metavar='config', default='config.json',
+    parser.add_argument('config_file_path', nargs='?', metavar='config', default='config.json',
                        help='Path to the config json file')
     args = parser.parse_args()
 
@@ -25,13 +30,14 @@ def main():
     with open(args.config_file_path) as config_json_file:
         configs = json.load(config_json_file)
 
-    # Get name map first
     name_map = get_name_map(configs["name_map_file"], configs["name_start_line"])
-
     common_headers = set(configs['common_headers'])
     additional_headers = set(configs['additional_headers'])
     common_columns = set([])
     additional_columns = set([])
+    supported_transforms = {'log': log}
+    if configs['transform'] and configs['transform'].lower() in supported_transforms.keys():
+        transform = supported_transforms[configs['transform']]
 
     # Open the write context first, so we always have access to the output
     with open(configs['output_file'], 'w', newline='\n') as output_file:
@@ -76,8 +82,13 @@ def main():
                             # Map name, and write new name here
                             to_write.append(name_map[first_file_name] + '_' + row[i])
                     else:
-                        if i in common_columns or i in additional_columns:
+                        if i in common_columns:
                             to_write.append(row[i])
+                        elif i in additional_columns:
+                            if transform:
+                                to_write.append(transform(row[i]))
+                            else:
+                                to_write.append(row[i])
 
                 for i in range(len(csv_readers)):
                     csv_reader = csv_readers[i]
@@ -91,7 +102,10 @@ def main():
                                 to_write.append(name_map[filename] + '_' + additional_row[j])
                         else:
                             if j in additional_columns:
-                                to_write.append(additional_row[j])
+                                if transform:
+                                    to_write.append(transform(additional_row[j]))
+                                else:
+                                    to_write.append(additional_row[j])
                 csv_writer.writerow(to_write)
 
 

@@ -1,9 +1,10 @@
 {
-"source_files": ["/path/to/file_1_1.txt", "/path/to/file_1_2.txt", "/path/to/file_1_3.txt"],
+"source_files": ["/path/to/soure_file_1_1", "/path/to/soure_file_1_2", "/path/to/soure_file_1_3"],
 "start_line": 10,
 "common_headers": ["FeatureNum", "Row", "Col", "accessions", "chr_coord", "SubTypeMask", "SubTypeName", "Start", "Sequence", "ProbeUID", "ControlType", "ProbeName", "GeneName", "SystematicName", "Description"],
 "additional_headers": ["gProcessedSignal"],
-"name_map_file": "/path/to/name_map_file.csv",
+"transform": "log",
+"name_map_file": "/path/to/name_map_file",
 "name_start_line": 5,
 "output_file": "aggregated_data.csv"
 }
